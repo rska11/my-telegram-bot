@@ -4,11 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-const bot = new Telegraf(process.env.BOT_TOKEN as string);
+const bot = new Telegraf(process.env.BOT_TOKEN!);
 
 const supabase = createClient(
-  process.env.SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY! // ❗️ Не SERVICE_ROLE!
 );
 
 bot.start(async (ctx) => {
@@ -18,16 +18,12 @@ bot.start(async (ctx) => {
     return ctx.reply('❌ Токен не найден. Пожалуйста, используйте правильную ссылку.');
   }
 
-  const { error } = await supabase.from('telegram_tokens').insert([
-    {
-      token: payload,
-      user_id: ctx.from.id,
-      created_at: new Date().toISOString(),
-    },
-  ]);
+  const { error } = await supabase.from('telegram_tokens').update({
+    user_id: ctx.from.id,
+  }).eq('token', payload);
 
   if (error) {
-    console.error('Ошибка сохранения:', error.message);
+    console.error('Ошибка обновления токена:', error.message);
     return ctx.reply('⚠ Что-то пошло не так. Попробуйте позже.');
   }
 
@@ -37,14 +33,7 @@ bot.start(async (ctx) => {
     '✅ Авторизация прошла успешно!\n\n🔁 Нажмите кнопку ниже, чтобы вернуться на сайт.',
     {
       reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '🔁 Вернуться на сайт',
-              url: returnUrl,
-            },
-          ],
-        ],
+        inline_keyboard: [[{ text: '🔁 Вернуться на сайт', url: returnUrl }]],
       },
     }
   );
