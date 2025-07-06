@@ -18,13 +18,16 @@ bot.start(async (ctx) => {
     return ctx.reply('❌ Токен не найден. Пожалуйста, используйте правильную ссылку.');
   }
 
-  const { error } = await supabase.from('telegram_tokens').insert([
-    {
-      token: payload,
-      user_id: ctx.from.id,
-      created_at: new Date().toISOString(),
-    },
-  ]);
+  const { error } = await supabase.from('telegram_tokens').upsert(
+    [
+      {
+        token: payload,
+        user_id: ctx.from.id,
+        created_at: new Date().toISOString(),
+      },
+    ],
+    { onConflict: 'user_id' } // исправлено: строка вместо массива
+  );
 
   if (error) {
     console.error('Ошибка сохранения:', error.message);
