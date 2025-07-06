@@ -1,40 +1,39 @@
-import { Telegraf } from 'telegraf';
-import dotenv from 'dotenv';
+import { Bot, Context } from 'grammy';
+import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 
-dotenv.config();
-
-const bot = new Telegraf(process.env.BOT_TOKEN as string);
+config();
 
 const supabase = createClient(
-  process.env.SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-bot.start(async (ctx) => {
-  const payload = ctx.startPayload;
+// Тип контекста без расширений
+type MyContext = Context & {
+  match?: string;
+};
 
-  if (!payload) {
-    return ctx.reply('❌ Токен не найден. Пожалуйста, используйте правильную ссылку.');
+const bot = new Bot<MyContext>(process.env.BOT_TOKEN!);
+
+bot.command('start', async (ctx) => {
+  const payload = ctx.match; // из /start token123
+  const telegramId = ctx.from?.id;
+
+  if (payload) {
+    const { error } = await supabase.from('telegram_tokens').update({
+      user_id: telegramId,
+    }).eq('token', payload);
+
+    if (error) {
+      console.error('❌ Ошибка обновления токена:', error.message);
+      return ctx.reply('Произошла ошибка при авторизации.');
+    }
+
+    ctx.reply('✅ Авторизация прошла успешно!');
+  } else {
+    ctx.reply('👋 Добро пожаловать в MagicPic!');
   }
-
-  const { error } = await supabase.from('telegram_tokens').upsert(
-    [
-      {
-        token: payload,
-        user_id: ctx.from.id,
-        created_at: new Date().toISOString(),
-      },
-    ],
-    { onConflict: 'user_id' } // исправлено: строка вместо массива
-  );
-
-  if (error) {
-    console.error('Ошибка сохранения:', error.message);
-    return ctx.reply('⚠ Что-то пошло не так. Попробуйте позже.');
-  }
-
-  return ctx.reply('✅ Добро пожаловать! Токен принят.');
 });
 
-bot.launch();
+bot.start();
