@@ -2,7 +2,7 @@ services:
   - type: web
     name: my-telegram-bot
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: ./render-build.sh
     startCommand: node dist/index.js
     envVars:
       - fromDotEnv: true
