@@ -13,12 +13,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
     "axios": "^1.10.0",
-    "dotenv": "^17.0.0",
+    "dotenv": "^17.0.1",
     "grammy": "^1.37.0",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
-    "@types/node": "^24.0.7",
+    "@types/node": "^24.0.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
