@@ -2,8 +2,8 @@ services:
   - type: web
     name: my-telegram-bot
     env: node
-    buildCommand: npm install
-    startCommand: node index.ts
+    buildCommand: npm install --include=dev
+    startCommand: npm run dev
     envVars:
       - key: BOT_TOKEN
         value: 7992367578:AAENcecDEN2FyBiPwN1tHjyQLsVL380IgxQ
