@@ -18,33 +18,38 @@ bot.start(async (ctx) => {
     return ctx.reply('❌ Токен не найден. Пожалуйста, используйте правильную ссылку.');
   }
 
-  // Проверяем, существует ли токен уже
+  // 1. Ищем токен в базе
   const { data: existingToken, error: checkError } = await supabase
     .from('telegram_tokens')
-    .select('token')
+    .select('*')
     .eq('token', payload)
-    .maybeSingle(); // не вызывает ошибку, если ничего не найдено
+    .maybeSingle();
 
   if (checkError) {
     console.error('Ошибка при проверке токена:', checkError.message);
     return ctx.reply('⚠ Что-то пошло не так при проверке токена.');
   }
 
-  if (existingToken) {
+  // 2. Если токен не найден — неправильная ссылка
+  if (!existingToken) {
+    return ctx.reply('❌ Токен не найден. Используйте свежую ссылку для входа.');
+  }
+
+  // 3. Если токен уже использован — авторизация не разрешается
+  if (existingToken.user_id) {
     return ctx.reply('⚠ Этот токен уже использован. Пожалуйста, сгенерируйте новый.');
   }
 
-  // Вставляем токен
-  const { error } = await supabase.from('telegram_tokens').insert([
-    {
-      token: payload,
+  // 4. Обновляем токен — сохраняем user_id (этого достаточно!)
+  const { error: updateError } = await supabase
+    .from('telegram_tokens')
+    .update({
       user_id: ctx.from.id,
-      created_at: new Date().toISOString(),
-    },
-  ]);
+    })
+    .eq('token', payload);
 
-  if (error) {
-    console.error('Ошибка сохранения токена:', error.message);
+  if (updateError) {
+    console.error('Ошибка при обновлении токена:', updateError.message);
     return ctx.reply('⚠ Что-то пошло не так. Попробуйте позже.');
   }
 
